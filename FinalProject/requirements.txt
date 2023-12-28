@@ -1,0 +1,6 @@
+pip install gspread
+pip install oauth2client
+pip install bcrypt
+
+pip install customtkinter
+pip install ttkbootstrap
