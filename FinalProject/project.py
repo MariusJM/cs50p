@@ -4,7 +4,7 @@ import os
 import ttkbootstrap as ttk
 import tkinter as tk
 from tkinter import messagebox
-
+import bcrypt
 
 user_name = None
 user_password = None
@@ -22,7 +22,6 @@ def create_gspread_client():
 
 def check_saved_user():
     rememberMe = open(os.path.join(os.path.dirname(__file__), "rememberMe.txt"))
-    # print(rememberMe.read())
     if rememberMe.readline() != "":
         rememberMe.close()
         mainApp()
@@ -37,16 +36,18 @@ def check_credentials(user, password):
     client = create_gspread_client()
     sheet = client.open('math_users').sheet1
     users = sheet.col_values(1)[1:]
+    hashed_password = hash_password(password).decode("utf-8")
+    print(hashed_password)
     if user in users:
         fuser = sheet.find(user)
-        if sheet.cell(fuser.row, 2).value == password:
+        stored_hashed_password = sheet.cell(fuser.row, 2).value
+        if bcrypt.checkpw(password.encode('utf-8'), stored_hashed_password.encode('utf-8')):
             if remember_me.get() == True:
-                with open(os.path.join(os.getcwd(),r"FinalProject/rememberMe.txt"), "w") as rememberMe_file:
+                with open(os.path.join(os.getcwd(), r"FinalProject/rememberMe.txt"), "w") as rememberMe_file:
                     rememberMe_file.write(user)
-                    rememberMe_file.close()
-                    w_login.destroy()
-                    mainApp()
-                    return True
+                w_login.destroy()
+                mainApp()
+                return True
             else:
                 w_login.destroy()
                 mainApp()
@@ -56,16 +57,21 @@ def check_credentials(user, password):
     else:
         messagebox.showerror("Error", f"User {user} does not exist")
 
+def hash_password(password):
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), salt)
+    return hashed_password
+
 def add_new_user(user, password, password_repeat, signupWindow):
     if password == password_repeat and password != "":
         client = create_gspread_client()
         sheet = client.open('math_users').sheet1
         users = sheet.col_values(1)[1:]
         if user in users:
-            messagebox.showerror("Error", "User allready exists")
-            
+            messagebox.showerror("Error", "User already exists")         
         else:
-            sheet.insert_row([user, password], 2)
+            hashed_password = hash_password(password).decode('utf-8')
+            sheet.insert_row([user, hashed_password], 2)
             signupWindow.destroy()
             login_window()
     else:
