@@ -13,9 +13,15 @@ w_login = None
 def main():
     check_saved_user()
 
+SCOPE = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
+CREDENTIALS_FILE = os.path.join(os.path.join(os.path.dirname(__file__), "mathapp_client_secret.json"))
+
+def create_gspread_client():
+    creds = ServiceAccountCredentials.from_json_keyfile_name(CREDENTIALS_FILE, SCOPE)
+    return gspread.authorize(creds)
 
 def check_saved_user():
-    rememberMe = open(os.path.join(os.getcwd(),r"FinalProject/rememberMe.txt"))
+    rememberMe = open(os.path.join(os.path.dirname(__file__), "rememberMe.txt"))
     # print(rememberMe.read())
     if rememberMe.readline() != "":
         rememberMe.close()
@@ -27,9 +33,8 @@ def check_saved_user():
 
 def check_credentials(user, password):
     global w_login
-    scope =  ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-    creds = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(os.getcwd(),r"FinalProject/mathapp_client_secret.json"), scope)
-    client = gspread.authorize(creds)
+
+    client = create_gspread_client()
     sheet = client.open('math_users').sheet1
     users = sheet.col_values(1)[1:]
     if user in users:
@@ -53,9 +58,7 @@ def check_credentials(user, password):
 
 def add_new_user(user, password, password_repeat, signupWindow):
     if password == password_repeat and password != "":
-        scope =  ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-        creds = ServiceAccountCredentials.from_json_keyfile_name(os.path.join(os.getcwd(),r"FinalProject/mathapp_client_secret.json"), scope)
-        client = gspread.authorize(creds)
+        client = create_gspread_client()
         sheet = client.open('math_users').sheet1
         users = sheet.col_values(1)[1:]
         if user in users:
