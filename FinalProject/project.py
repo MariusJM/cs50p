@@ -92,15 +92,15 @@ def login_window():
     user_password = tk.StringVar()
     remember_me = ttk.IntVar()
 
-    l_username = ttk.Label(master=f_login,text="Email address", anchor="w", justify="left",width=22).pack()
-    e_user_name = ttk.Entry(master=f_login,justify="left",width=20,textvariable=user_name).pack(padx=10,pady=(2, 10))
+    ttk.Label(master=f_login,text="Email address", anchor="w", justify="left",width=22).pack()
+    ttk.Entry(master=f_login,justify="left",width=20,textvariable=user_name).pack(padx=10,pady=(2, 10))
 
-    l_password = ttk.Label(master=f_login, text="Password", anchor="w", justify="left", width=22).pack()
-    e_user_password = ttk.Entry(master=f_login, textvariable=user_password, show="*").pack(padx=10, pady=(2, 4))
+    ttk.Label(master=f_login, text="Password", anchor="w", justify="left", width=22).pack()
+    ttk.Entry(master=f_login, textvariable=user_password, show="*").pack(padx=10, pady=(2, 4))
 
     f_remember_me = ttk.Frame(f_login)
-    t_remember_me = ttk.Checkbutton(f_remember_me, variable=remember_me).pack(side="left")
-    l_remember_me = ttk.Label(f_remember_me, text="Remember me").pack(side="left")
+    ttk.Checkbutton(f_remember_me, variable=remember_me).pack(side="left")
+    ttk.Label(f_remember_me, text="Remember me").pack(side="left")
     f_remember_me.pack()
 
     b_login = ttk.Button(master=f_login, text="Login", command= lambda: check_credentials(user_name.get(), user_password.get())).pack(padx=5, pady=5)
@@ -132,33 +132,63 @@ def signup_window():
     w_signup.mainloop()
 
 def mainApp():
+
     w_main = ttk.Window(themename="flatly")
     w_main.title("Math App")
     w_main.geometry("660x600+680+360")
-    w_main.configure(bg="#333333")
+    style = ttk.Style()
+    style.theme_use("cyborg")
     w_main.propagate(False)
-    b_frame = tk.Frame(w_main, height=800, width=200, borderwidth= 1, relief="solid", bg="#333333")
+    b_frame = ttk.Frame(w_main, height=800, width=200)
     b_frame.pack(side="top", pady=10)
 
-    m_frame = tk.Frame(w_main,height=400, width=200, borderwidth= 1, relief="solid", bg="#333333")
-    m_frame.pack(side="top", pady=10)
+    m_frame = ttk.Frame(w_main,height=400, width=200)
+    m_frame.pack(side="top", pady=2)
 
     paddingX, paddingY = 1, 1
-    buttonW, buttonH = 14, 2
+    buttonW = 14
 
-    b_userInfo = tk.Button(b_frame, text="User Info", width=buttonW, height=buttonH).pack(padx=paddingX,pady=paddingY,side="left")
-    b_chalanges = tk.Button(b_frame, text="Chalanges", width=buttonW, height=buttonH).pack(padx=paddingX,pady=paddingY,side="left")
-    b_userBestScore = tk.Button(b_frame, text="My Scoreboard", width=buttonW, height=buttonH).pack(padx=paddingX,pady=paddingY,side="left")
+    ttk.Button(b_frame, text="User Info", width=buttonW, command= lambda: user_info(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
+    ttk.Button(b_frame, text="Chalanges", width=buttonW, command= lambda: chalanges(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
+    ttk.Button(b_frame, text="My Scoreboard", width=buttonW, command= lambda: my_score(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
 
-    b_leaderboard = tk.Button(b_frame, text="Leaderboard", width=buttonW, height=buttonH, command= lambda: load_scoreboard(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
+    ttk.Button(b_frame, text="Leaderboard", width=buttonW, command= lambda: load_scoreboard(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
 
-    b_quit = tk.Button(b_frame, text="Quit", width=buttonW, height=buttonH, command= lambda: quit_application(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
-    b_logout = tk.Button(b_frame, text="Logout", width=buttonW, height=buttonH, command=lambda:logout(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
+    ttk.Button(b_frame, text="Quit", width=buttonW, command= lambda: quit_application(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
+    ttk.Button(b_frame, text="Logout", width=buttonW, command=lambda:logout(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
     w_main.mainloop()
 
 def clear_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
+
+def user_info(frame):
+    clear_frame(frame)
+    ttk.Label(frame, text="Hello").pack()
+
+
+def chalanges(c_frame):
+    clear_frame(c_frame)
+    button_frame = ttk.Frame(c_frame)#, borderwidth= 1, relief="solid")
+    ttk.Button(button_frame, text="Addition", width=14).pack(padx=1,pady=1,side="left")
+    ttk.Button(button_frame, text="Substraction", width=14).pack(padx=1,pady=1,side="left")
+    ttk.Button(button_frame, text="Multiplication", width=14).pack(padx=1,pady=1,side="left")
+    ttk.Button(button_frame, text="Division", width=14).pack(padx=1,pady=1,side="left")
+    button_frame.pack(side="top", padx=5,pady=5)
+    dificulty_frame = ttk.Frame(c_frame, borderwidth= 1, relief="solid")
+    ttk.Button(dificulty_frame, text="Easy", width=14).pack(padx=1,pady=1,side="left")
+    ttk.Button(dificulty_frame, text="Medium", width=14).pack(padx=1,pady=1,side="left")
+    ttk.Button(dificulty_frame, text="Hard", width=14).pack(padx=1,pady=1,side="left")
+    dificulty_frame.pack(side="top", padx=5,pady=5)
+
+
+def my_score(frame):
+    clear_frame(frame)
+    ttk.Label(frame, text="My highest score in Addition is ****", font="Calibri 24 bold").pack()
+    ttk.Label(frame, text="My highest score in Subtraction is ****", font="Calibri 24 bold").pack()
+    ttk.Label(frame, text="My highest score in Multiplication is ****", font="Calibri 24 bold").pack()
+    ttk.Label(frame, text="My highest score in Division is ****", font="Calibri 24 bold").pack()
+
 
 def load_scoreboard(sb_frame):
     clear_frame(sb_frame)
@@ -169,11 +199,11 @@ def load_scoreboard(sb_frame):
     columns = ["Place", "User", "Score", "Time", "Date"]
 
 
-    style = ttk.Style()
-    style.configure("Custom.Treeview", background="#333333", foreground="white")
-    style.configure("Custom.Treeview.Heading", background="#333333", foreground="white")
+    # style = ttk.Style()
+    # style.configure("Custom.Treeview", background="#333333", foreground="white")
+    # style.configure("Custom.Treeview.Heading", background="#333333", foreground="white")
 
-    tree = ttk.Treeview(sb_frame, columns=columns, show="headings", height=20, style="Custom.Treeview")
+    tree = ttk.Treeview(sb_frame, columns=columns, show="headings", height=20)#, style="Custom.Treeview")
 
     for col in columns:
         tree.heading(col, text=col)
