@@ -80,9 +80,11 @@ def login_window():
     global user_name, user_password, remember_me, w_login
 
     #login window    
-    w_login = ttk.Window(themename="flatly")
+    w_login = ttk.Window()
     w_login.title("Login")
     w_login.geometry('250x360+1030+360')
+    style = ttk.Style()
+    style.theme_use("cyborg")
     ttk.Label(w_login, text="Login", font="Calibri 24 bold").pack(pady=20)
     f_login = ttk.Frame(w_login, width = 250, height = 400)
     f_login.pack_propagate(False)
@@ -111,9 +113,11 @@ def login_window():
 
 def signup_window():
     #signup window    
-    w_signup = ttk.Window(themename="flatly")
+    w_signup = ttk.Window()
     w_signup.title("Signup")
     w_signup.geometry("250x360+1030+360")
+    style = ttk.Style()
+    style.theme_use("cyborg")
     ttk.Label(w_signup, text="Signup", font="Calibri 24 bold").pack(pady=20)
     f_signup = ttk.Frame(w_signup, width = 250, height = 400, borderwidth= 1, relief="solid")
     f_signup.pack_propagate(False)
@@ -133,7 +137,7 @@ def signup_window():
 
 def mainApp():
 
-    w_main = ttk.Window(themename="flatly")
+    w_main = ttk.Window()
     w_main.title("Math App")
     w_main.geometry("660x600+680+360")
     style = ttk.Style()
