@@ -37,7 +37,6 @@ def check_credentials(user, password):
     sheet = client.open('math_users').sheet1
     users = sheet.col_values(1)[1:]
     hashed_password = hash_password(password).decode("utf-8")
-    print(hashed_password)
     if user in users:
         fuser = sheet.find(user)
         stored_hashed_password = sheet.cell(fuser.row, 2).value
@@ -135,11 +134,73 @@ def signup_window():
 def mainApp():
     w_main = ttk.Window(themename="flatly")
     w_main.title("Math App")
-    w_main.geometry("600x800+680+360")
-    w_main.propagate(False)    
-    l_frame = ttk.Frame(w_main, height=800, width=200, borderwidth= 1, relief="solid")
-    l_frame.pack(side="left")
+    w_main.geometry("660x600+680+360")
+    w_main.configure(bg="#333333")
+    w_main.propagate(False)
+    b_frame = tk.Frame(w_main, height=800, width=200, borderwidth= 1, relief="solid", bg="#333333")
+    b_frame.pack(side="top", pady=10)
+
+    m_frame = tk.Frame(w_main,height=400, width=200, borderwidth= 1, relief="solid", bg="#333333")
+    m_frame.pack(side="top", pady=10)
+
+    paddingX, paddingY = 1, 1
+    buttonW, buttonH = 14, 2
+
+    b_userInfo = tk.Button(b_frame, text="User Info", width=buttonW, height=buttonH).pack(padx=paddingX,pady=paddingY,side="left")
+    b_chalanges = tk.Button(b_frame, text="Chalanges", width=buttonW, height=buttonH).pack(padx=paddingX,pady=paddingY,side="left")
+    b_userBestScore = tk.Button(b_frame, text="My Scoreboard", width=buttonW, height=buttonH).pack(padx=paddingX,pady=paddingY,side="left")
+
+    b_leaderboard = tk.Button(b_frame, text="Leaderboard", width=buttonW, height=buttonH, command= lambda: load_scoreboard(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
+
+    b_quit = tk.Button(b_frame, text="Quit", width=buttonW, height=buttonH, command= lambda: quit_application(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
+    b_logout = tk.Button(b_frame, text="Logout", width=buttonW, height=buttonH, command=lambda:logout(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
     w_main.mainloop()
+
+def clear_frame(frame):
+    for widget in frame.winfo_children():
+        widget.destroy()
+
+def load_scoreboard(sb_frame):
+    clear_frame(sb_frame)
+    client = create_gspread_client()
+    sheet = client.open('math_users')
+    scoreboard = sheet.get_worksheet(1)
+    all_scores = scoreboard.get_all_records()
+    columns = ["Place", "User", "Score", "Time", "Date"]
+
+
+    style = ttk.Style()
+    style.configure("Custom.Treeview", background="#333333", foreground="white")
+    style.configure("Custom.Treeview.Heading", background="#333333", foreground="white")
+
+    tree = ttk.Treeview(sb_frame, columns=columns, show="headings", height=20, style="Custom.Treeview")
+
+    for col in columns:
+        tree.heading(col, text=col)
+        tree.column(col, width=120, anchor="center",)
+    for data in all_scores:
+        tree.insert("", "end", values=(data["Place"], data["User"], data["Score"], data["Time"], data["Date"]))
+    tree.pack()
+
+def quit_application(appwindow):
+    answer = messagebox.askyesno("Quit", "Are you sure you want to quit?")
+    if answer:
+        appwindow.destroy()
+
+
+def logout(appwindow):
+    answer = messagebox.askyesno("Logout", "Are you sure you want to Logout?")
+    if answer:
+        with open(os.path.join(os.getcwd(), r"FinalProject/rememberMe.txt"), "r") as rememberMe_file:
+            lines = rememberMe_file.readlines()
+        if lines:
+            lines.pop(0)
+            with open(os.path.join(os.getcwd(), r"FinalProject/rememberMe.txt"), 'w') as file:
+                file.writelines(lines)
+        appwindow.destroy()
+        login_window()
+
+
 
 
 if __name__ == "__main__":
