@@ -5,6 +5,7 @@ import ttkbootstrap as ttk
 import tkinter as tk
 from tkinter import messagebox
 import bcrypt
+import random
 
 user_name = None
 user_password = None
@@ -155,11 +156,10 @@ def mainApp():
     ttk.Button(b_frame, text="User Info", width=buttonW, command= lambda: user_info(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
     ttk.Button(b_frame, text="Chalanges", width=buttonW, command= lambda: chalanges(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
     ttk.Button(b_frame, text="My Scoreboard", width=buttonW, command= lambda: my_score(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
-
     ttk.Button(b_frame, text="Leaderboard", width=buttonW, command= lambda: load_scoreboard(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
-
     ttk.Button(b_frame, text="Quit", width=buttonW, command= lambda: quit_application(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
     ttk.Button(b_frame, text="Logout", width=buttonW, command=lambda:logout(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
+    user_info(m_frame)
     w_main.mainloop()
 
 def clear_frame(frame):
@@ -170,39 +170,58 @@ def user_info(frame):
     clear_frame(frame)
     ttk.Label(frame, text="Hello").pack()
 
-def create_challenge(frame):
+def create_challenge(frame, x, operator, y):
     clear_frame(frame)
+    number_of_chalanges = 10
+    for i in range(number_of_chalanges):
+        chal_frame = tk.Frame(frame)
+        tk.Label(chal_frame, text=f"{random.randint(0, x.get())} {operator.get()} {random.randint(0, y.get())} =", font="Calibri 16 bold").pack(side="left")
+        ttk.Entry(chal_frame,justify="left",width=20).pack(side="left", padx=10,pady=(2, 10))
+        chal_frame.pack()
+    bb_frame = tk.Frame(frame)
+    tk.Button(bb_frame, text="Cancel").pack(side="left")
+    tk.Button(bb_frame, text="Finish").pack(side="right")
+    bb_frame.pack(side="left")
 
 
 def on_slider_change(label_value, text ,value_var):
     label_value.config(text=f"{text}{value_var.get()}")
 
-def set_operator(label_value, x_value,operator, y_value):
+def set_operator(label_value, x_value, operator, y_value, operator_value):
+    operator_value.set(operator)
     label_value.config(text=f"{x_value.get()} {operator} {y_value.get()} =")
+
+
 
 def chalanges(c_frame):
     clear_frame(c_frame)
     button_frame = ttk.Frame(c_frame)#, borderwidth= 1, relief="solid")
-    ttk.Button(button_frame, text="Addition", width=14, command=lambda: set_operator(operator_label, x_value_var, "+", y_value_var)).pack(padx=1,pady=1,side="left")
-    ttk.Button(button_frame, text="Substraction", width=14, command=lambda: set_operator(operator_label, x_value_var, "-", y_value_var)).pack(padx=1,pady=1,side="left")
-    ttk.Button(button_frame, text="Multiplication", width=14, command=lambda: set_operator(operator_label, x_value_var, "*", y_value_var)).pack(padx=1,pady=1,side="left")
-    ttk.Button(button_frame, text="Division", width=14, command=lambda: set_operator(operator_label, x_value_var, "\\", y_value_var)).pack(padx=1,pady=1,side="left")
+    ttk.Button(button_frame, text="Addition", width=14, command=lambda: set_operator(operator_label, x_value_var, "+", y_value_var, operator_value)).pack(padx=1,pady=1,side="left")
+    ttk.Button(button_frame, text="Substraction", width=14, command=lambda: set_operator(operator_label, x_value_var, "-", y_value_var, operator_value)).pack(padx=1,pady=1,side="left")
+    ttk.Button(button_frame, text="Multiplication", width=14, command=lambda: set_operator(operator_label, x_value_var, "*", y_value_var, operator_value)).pack(padx=1,pady=1,side="left")
+    ttk.Button(button_frame, text="Division", width=14, command=lambda: set_operator(operator_label, x_value_var, "\\", y_value_var, operator_value)).pack(padx=1,pady=1,side="left")
     button_frame.pack(side="top", padx=5,pady=5)
 
     dificulty_frame = ttk.Frame(c_frame, width=600, height=50)
     dificulty_frame.pack_propagate(False)
     x_dificulty_frame = ttk.Frame(dificulty_frame, width=250, height=50)
     x_dificulty_frame.pack_propagate(False)
+    default_value = 10
     x_value_var = tk.IntVar()
+    x_value_var.set(default_value)
     ttk.Scale(x_dificulty_frame, from_=0, to=100, orient="horizontal", variable=x_value_var, command=lambda value: on_slider_change(x_label_value, "X Range: ",x_value_var), length=100).pack(padx=1, pady=1, side="left")
     x_label_value = tk.Label(x_dificulty_frame, text="X Range: 0", padx=10, pady=10)
     x_label_value.pack(side="right")
 
     operator_label = tk.Label(dificulty_frame, text="10 + 10 =", padx=10,pady=10)
+    operator_value_default = "+"
+    operator_value = tk.StringVar()
+    operator_value.set(operator_value_default)
 
     y_dificulty_frame = ttk.Frame(dificulty_frame, width=250, height=50)
     # y_dificulty_frame.pack_propagate(False)
     y_value_var = tk.IntVar()
+    y_value_var.set(default_value)
     ttk.Scale(y_dificulty_frame, from_=0, to=100, orient="horizontal", variable=y_value_var, command=lambda value: on_slider_change(y_label_value, "Y Range: ",y_value_var), length=100).pack(padx=1, pady=1, side="right")
     y_label_value = tk.Label(y_dificulty_frame, text="Y Range: 0", padx=10, pady=10)
     y_label_value.pack(side="left")
@@ -215,7 +234,7 @@ def chalanges(c_frame):
     y_dificulty_frame.pack(side="right", padx=5,pady=5)
     dificulty_frame.pack(side="top", padx=5,pady=5)
 
-    ttk.Button(c_frame, text="Begin Chalange", width=14, command=lambda:create_challenge(c_frame)).pack(padx=1,pady=1)
+    ttk.Button(c_frame, text="Begin Chalange", width=14, command=lambda:create_challenge(c_frame, x_value_var, operator_value, y_value_var)).pack(padx=1,pady=1)
 
 def my_score(frame):
     clear_frame(frame)
