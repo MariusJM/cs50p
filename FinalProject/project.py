@@ -170,17 +170,26 @@ def user_info(frame):
     clear_frame(frame)
     ttk.Label(frame, text="Hello").pack()
 
+def validate_numeric_input(action, value_if_allowed):
+    # Check if the input is empty or a valid integer
+    if action == '1':  # insert
+        return value_if_allowed.isdigit() or value_if_allowed == ""
+    return True
+
+
 def create_challenge(frame, x, operator, y):
     clear_frame(frame)
     number_of_chalanges = 10
     for i in range(number_of_chalanges):
-        chal_frame = tk.Frame(frame)
+        chal_frame = tk.Frame(frame, height=40, width=250)
+        chal_frame.propagate(False)
         tk.Label(chal_frame, text=f"{random.randint(0, x.get())} {operator.get()} {random.randint(0, y.get())} =", font="Calibri 16 bold").pack(side="left")
-        ttk.Entry(chal_frame,justify="left",width=20).pack(side="left", padx=10,pady=(2, 10))
+        vcmd = (chal_frame.register(validate_numeric_input), '%d', '%P')
+        ttk.Entry(chal_frame, justify="left", width=20, validate="key", validatecommand=vcmd).pack(side="right",fill="x", expand=True, padx=10, pady=(2, 10))
         chal_frame.pack()
     bb_frame = tk.Frame(frame)
-    tk.Button(bb_frame, text="Cancel").pack(side="left")
-    tk.Button(bb_frame, text="Finish").pack(side="right")
+    tk.Button(bb_frame, text="Cancel", command=lambda:chalanges(frame), width=16).pack(side="left", padx=1, pady=1)
+    tk.Button(bb_frame, text="Finish", command=lambda:chalanges(frame), width=16).pack(side="right", padx=1, pady=1)
     bb_frame.pack(side="left")
 
 
