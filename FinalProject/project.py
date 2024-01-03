@@ -179,10 +179,32 @@ def user_info(frame):
     clear_frame(frame)
     file = open(os.path.join(os.path.dirname(__file__), "rememberMe.txt"))
     user_name = file.readline()
+    best_score = find_best_score(user_name)
     # print(file.readline())
     # print(user_name)
-    ttk.Label(frame, text=f"Hello {user_name}").pack()
+    ttk.Label(frame, text=f"Hello", font="Calibri 12 bold").pack()
+    ttk.Label(frame, text=f"{user_name}", font="Calibri 24 bold").pack()
+    ttk.Label(frame, text=f"Your best score is:", font="Calibri 12 bold").pack()
+    ttk.Label(frame, text=f"{best_score}", font="Calibri 36 bold").pack()
+    
     file.close()
+
+def find_best_score(user_name):
+    client = create_gspread_client()
+    sheet = client.open('math_users')
+    leaderboard_sheet = sheet.get_worksheet(1)
+    all_records = leaderboard_sheet.get_all_records()
+    user_found = False
+    user_scores = []
+
+    for record in all_records:
+        if record['User'] == user_name:
+            user_found = True
+            user_scores.append(int(record['Score']))
+    if user_found:
+        return max(user_scores)
+    else:
+        return 0
 
 def validate_numeric_input(action, value_if_allowed):
     # Check if the input is empty or a valid numeric value (integer or float)
