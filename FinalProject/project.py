@@ -6,6 +6,8 @@ import tkinter as tk
 from tkinter import messagebox
 import bcrypt
 import random
+from datetime import datetime
+import time
 
 user_name = None
 user_password = None
@@ -86,6 +88,7 @@ def login_window():
     w_login.geometry('250x360+1030+360')
     style = ttk.Style()
     style.theme_use("cyborg")
+
     ttk.Label(w_login, text="Login", font="Calibri 24 bold").pack(pady=20)
     f_login = ttk.Frame(w_login, width = 250, height = 400)
     f_login.pack_propagate(False)
@@ -106,11 +109,15 @@ def login_window():
     ttk.Label(f_remember_me, text="Remember me").pack(side="left")
     f_remember_me.pack()
 
-    b_login = ttk.Button(master=f_login, text="Login", command= lambda: check_credentials(user_name.get(), user_password.get())).pack(padx=5, pady=5)
+    b_login = ttk.Button(master=f_login, text="Login", command= lambda: [check_credentials(user_name.get(), user_password.get()), update_current_user(user_name.get())]).pack(padx=5, pady=5)
     b_sign_up = ttk.Button(master=f_login, text="Sign Up", command= lambda:[w_login.destroy(),signup_window()]).pack(padx=5, pady=5)
     
     f_login.pack()
     w_login.mainloop()
+
+def update_current_user(user_name):
+    with open(os.path.join(os.path.dirname(__file__), "rememberMe.txt"), "w") as file:
+        file.write(user_name)
 
 def signup_window():
     #signup window    
@@ -155,7 +162,9 @@ def mainApp():
 
     ttk.Button(b_frame, text="User Info", width=buttonW, command= lambda: user_info(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
     ttk.Button(b_frame, text="Chalanges", width=buttonW, command= lambda: chalanges(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
-    ttk.Button(b_frame, text="My Scoreboard", width=buttonW, command= lambda: my_score(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
+    my_score_button = ttk.Button(b_frame, text="My Scoreboard", width=buttonW, command= lambda: my_score(m_frame))
+    my_score_button['state'] = 'disabled'
+    my_score_button.pack(padx=paddingX,pady=paddingY,side="left")
     ttk.Button(b_frame, text="Leaderboard", width=buttonW, command= lambda: load_scoreboard(m_frame)).pack(padx=paddingX,pady=paddingY,side="left")
     ttk.Button(b_frame, text="Quit", width=buttonW, command= lambda: quit_application(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
     ttk.Button(b_frame, text="Logout", width=buttonW, command=lambda:logout(w_main)).pack(padx=paddingX,pady=paddingY,side="left")
@@ -168,22 +177,138 @@ def clear_frame(frame):
 
 def user_info(frame):
     clear_frame(frame)
-    ttk.Label(frame, text="Hello").pack()
+    file = open(os.path.join(os.path.dirname(__file__), "rememberMe.txt"))
+    user_name = file.readline()
+    # print(file.readline())
+    # print(user_name)
+    ttk.Label(frame, text=f"Hello {user_name}").pack()
+    file.close()
 
 def validate_numeric_input(action, value_if_allowed):
-    # Check if the input is empty or a valid integer
+    # Check if the input is empty or a valid numeric value (integer or float)
     if action == '1':  # insert
-        return value_if_allowed.isdigit() or value_if_allowed == ""
+        try:
+            float(value_if_allowed)
+            return True
+        except ValueError:
+            return False
     return True
 
 chalange_list = []
 
+def update_leaderboard(new_score, completion_time, frame):
+    file = open(os.path.join(os.path.dirname(__file__), "rememberMe.txt"))
+    user_name = file.readline()
+    file.close()
+    client = create_gspread_client()
+    sheet = client.open('math_users')
+    leaderboard_sheet = sheet.get_worksheet(1)
 
-def check_answers(local_chalange, entry_widgets):
-    user_answers = [entry.get() for entry in entry_widgets]
-    chalange_list.extend(f"{chalange},{answer}" for chalange, answer in zip(local_chalange, user_answers))
-    print(chalange_list)
+    # Step 1: Retrieve Existing Leaderboard Data
+    all_records = leaderboard_sheet.get_all_records()
+    total_score_column = 'Score'  # Replace with the actual column name
+    current_datetime = datetime.now()
+
+    # Step 2: Insert the New Score
+    # Create a new record with the user's name, new score, date, and time  # Replace with the actual user's name
+    new_record = {
+        'User': user_name,
+        total_score_column: new_score,
+        'Date': current_datetime,
+        'Time': completion_time
+    }
+
+    # Find the appropriate position to insert the new record
+    index_to_insert = 0
+    for index, record in enumerate(all_records):
+        if float(record[total_score_column]) < new_score:
+            index_to_insert = index + 1
+        else:
+            break
+
+    # Insert the new record at the found position
+    all_records.insert(index_to_insert, new_record)
+
+    # If the leaderboard exceeds 20 entries, sort the list and remove the lowest score
+    if len(all_records) > 20:
+        all_records.sort(key=lambda x: float(x[total_score_column]), reverse=True)
+        all_records.pop()
+
+    # Convert datetime values to strings
+    for record in all_records:
+        if isinstance(record['Date'], datetime):
+            record['Date'] = record['Date'].strftime('%Y-%m-%d %H:%M:%S')
+
+    # Step 3: Update the Google Sheets
+    # Clear existing data in the leaderboard sheet
+    leaderboard_sheet.clear()
+
+    # Insert the updated records into the cleared sheet
+    records_to_insert = [list(record.values()) for record in all_records]
+    header = list(all_records[0].keys())  # Assuming the first record has all the keys
+    leaderboard_sheet.insert_rows([header] + records_to_insert)
+    load_scoreboard(frame)
+
+
+
+def check_answers(local_chalange, entry_widgets, start_time, difficulty_multiplier, frame):
+    global chalange_list
+
     
+    counter = 0
+    user_answers = [entry.get() for entry in entry_widgets]
+
+    for chalange, user_answer in zip(local_chalange, user_answers):
+        split_equation = chalange.split(',')
+
+        if user_answer:
+            user_answer_int = int(user_answer)
+
+            if split_equation[1] == "+":
+                correct_answer = int(split_equation[0]) + int(split_equation[2])
+            elif split_equation[1] == "-":
+                correct_answer = int(split_equation[0]) - int(split_equation[2])
+            elif split_equation[1] == "*":
+                correct_answer = int(split_equation[0]) * int(split_equation[2])
+            elif split_equation[1] == "\\":
+                if int(split_equation[2]) == 0:
+                    correct_answer = 0
+                else:
+                    correct_answer = round(int(split_equation[0]) / int(split_equation[2]), 2)
+
+            if user_answer_int == correct_answer:
+                counter += 1
+                # print(f"Correct! {chalange} = {user_answer_int}")
+            # print(correct_answer)
+    operator_multiplier = 1
+    if split_equation[1] == "+":
+        operator_multiplier = 2
+    elif split_equation[1] == "-":
+        operator_multiplier = 2
+    elif split_equation[1] == "*":
+        operator_multiplier = 5
+    elif split_equation[1] == "\\":
+        operator_multiplier = 10
+    elapsed_time = time.time() - start_time
+    time_to_complete = format_time(elapsed_time)
+    minutes, seconds = map(float, time_to_complete.split(':'))
+    total_time_seconds = (minutes * 60 + seconds)/10
+    total_score = round(counter * difficulty_multiplier/total_time_seconds*operator_multiplier)
+    # print(time_to_complete)
+    # print(total_score)
+    
+    update_leaderboard(total_score, time_to_complete, frame)
+    print(f"Total Score: {total_score}")
+    chalange_list = []
+    
+    
+
+def format_time(seconds):
+    minutes, seconds = divmod(seconds, 60)
+    seconds, milliseconds = divmod(seconds, 1)
+    return "{:02}:{:02}.{:03}".format(int(minutes), int(seconds), int(milliseconds * 1000))
+
+
 
 def create_challenge(frame, x, operator, y):
     clear_frame(frame)
@@ -194,6 +319,7 @@ def create_challenge(frame, x, operator, y):
         x_value = random.randint(0, x.get())
         operator_val = operator.get()
         y_val = random.randint(0, y.get())
+        difficulty_multiplier = x_value*y_val
         local_chalange.append(f"{x_value},{operator_val},{y_val}")
         chal_frame = tk.Frame(frame, height=40, width=250)
         chal_frame.propagate(False)
@@ -204,14 +330,15 @@ def create_challenge(frame, x, operator, y):
         entry_widgets.append(e_answer)
         chal_frame.pack()
 
-
+    start_time = time.time()
     bb_frame = tk.Frame(frame)
     tk.Button(bb_frame, text="Cancel", command=lambda:chalanges(frame), width=16).pack(side="left", padx=1, pady=1)
-    tk.Button(bb_frame, text="Finish", command=lambda:check_answers(local_chalange, entry_widgets), width=16).pack(side="right", padx=1, pady=1)
+    tk.Button(bb_frame, text="Finish", command=lambda:[check_answers(local_chalange, entry_widgets, start_time, difficulty_multiplier, frame)], width=16).pack(side="right", padx=1, pady=1)
+    tk.Label(frame, text="Timer: ").pack(side="right")  # Placeholder for the timer label
     bb_frame.pack(side="left")
     
-    print(chalange_list)
-    print(local_chalange)
+    # print(chalange_list)
+    # print(local_chalange)
 
 
 def on_slider_change(label_value, text ,value_var):
@@ -256,9 +383,6 @@ def chalanges(c_frame):
     y_label_value = tk.Label(y_dificulty_frame, text="Y Range: 0", padx=10, pady=10)
     y_label_value.pack(side="left")
 
-    # ttk.Button(dificulty_frame, text="Medium", width=14).pack(padx=1,pady=1,side="left")
-    # ttk.Button(dificulty_frame, text="Hard", width=14).pack(padx=1,pady=1,side="left")
-
     x_dificulty_frame.pack(side="left", padx=5,pady=5)
     operator_label.pack(side="left", padx=5, pady=5)
     y_dificulty_frame.pack(side="right", padx=5,pady=5)
@@ -280,20 +404,15 @@ def load_scoreboard(sb_frame):
     sheet = client.open('math_users')
     scoreboard = sheet.get_worksheet(1)
     all_scores = scoreboard.get_all_records()
-    columns = ["Place", "User", "Score", "Time", "Date"]
+    columns = ["User", "Score", "Date", "Time"]
 
-
-    # style = ttk.Style()
-    # style.configure("Custom.Treeview", background="#333333", foreground="white")
-    # style.configure("Custom.Treeview.Heading", background="#333333", foreground="white")
-
-    tree = ttk.Treeview(sb_frame, columns=columns, show="headings", height=20)#, style="Custom.Treeview")
+    tree = ttk.Treeview(sb_frame, columns=columns, show="headings", height=20)
 
     for col in columns:
         tree.heading(col, text=col)
         tree.column(col, width=120, anchor="center",)
     for data in all_scores:
-        tree.insert("", "end", values=(data["Place"], data["User"], data["Score"], data["Time"], data["Date"]))
+        tree.insert("", "end", values=(data["User"], data["Score"], data["Date"], data["Time"]))
     tree.pack()
 
 def quit_application(appwindow):
